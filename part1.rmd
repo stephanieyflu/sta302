@@ -1,0 +1,117 @@
+### install packages
+
+```{r}
+# install.packages("AmesHousing")
+# install.packages("tidyverse")
+# install.packages("janitor")
+# install.packages("kableExtra")
+# install.packages("GGally")
+# install.packages("broom")
+```
+
+```{r}
+library(AmesHousing)
+library(tidyverse)
+library(janitor)
+library(kableExtra)
+library(knitr)
+library(GGally)
+library(broom)
+```
+
+### load the data
+
+```{r}
+data(ames_raw)
+head(ames_raw)
+
+ames <- ames_raw %>%
+  clean_names() %>%
+  drop_na(sale_price, gr_liv_area, overall_qual, year_built,
+          total_bsmt_sf, garage_cars, full_bath, lot_area,
+          neighborhood, central_air)
+```
+
+### relevant variables
+
+```{r}
+ames_sub <- ames %>%
+  select(
+    sale_price, gr_liv_area, overall_qual, year_built,
+    total_bsmt_sf, garage_cars, full_bath, lot_area,
+    neighborhood, central_air
+  ) %>%
+  mutate(
+    neighborhood = as.factor(neighborhood),
+    central_air = as.factor(central_air)
+  )
+
+head(ames_sub)
+```
+
+### exploratory summaries
+
+```{r}
+summary_stats <- ames_sub %>%
+  summarise(
+    n = n(),
+    mean_price = mean(sale_price),
+    median_price = median(sale_price),
+    sd_price = sd(sale_price),
+    min_price = min(sale_price),
+    max_price = max(sale_price)
+  )
+
+kbl(summary_stats, caption = "summary of sale price") %>%
+  kable_styling(full_width = TRUE)
+```
+
+### fit preliminary model
+
+```{r}
+model1 <- lm(
+  sale_price ~ gr_liv_area * neighborhood +
+    overall_qual + year_built + total_bsmt_sf +
+    garage_cars + full_bath + lot_area + central_air,
+  data = ames_sub
+)
+```
+
+### model summary
+
+```{r}
+summary_table <- tidy(model1, conf.int = TRUE)
+kbl(summary_table, digits = 3, caption = "preliminary linear model coefficients") %>%
+  kable_styling(full_width = FALSE)
+
+glance(model1) %>%
+  select(r.squared, adj.r.squared, sigma, p.value)
+```
+
+### residual diagnostics
+
+```{r}
+resid_df <- augment(model1)
+
+# residuals vs fitted
+ggplot(resid_df, aes(.fitted, .resid)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "residuals vs fitted values", x = "fitted values", y = "residuals")
+
+# normal QQ plot
+ggplot(resid_df, aes(sample = .std.resid)) +
+  stat_qq() + stat_qq_line() +
+  labs(title = "normal QQ plot")
+
+# histogram of residuals
+ggplot(resid_df, aes(.resid)) +
+  geom_histogram(bins = 30, fill = "skyblue", color = "white") +
+  labs(title = "distribution of residuals", x = "residuals", y = "count")
+```
+
+### save cleaned data
+
+```{r}
+# write.csv(ames_sub, "ames_cleaned.csv", row.names = FALSE)
+```
