@@ -1,6 +1,6 @@
 ### install packages
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 # install.packages("AmesHousing")
 # install.packages("tidyverse")
 # install.packages("janitor")
@@ -9,7 +9,7 @@
 # install.packages("broom")
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(AmesHousing)
 library(tidyverse)
 library(janitor)
@@ -21,7 +21,7 @@ library(broom)
 
 ### load the data
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 data(ames_raw)
 head(ames_raw)
 
@@ -34,7 +34,7 @@ ames <- ames_raw %>%
 
 ### relevant variables
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 ames_sub <- ames %>%
   select(
     sale_price, gr_liv_area, overall_qual, year_built,
@@ -51,7 +51,7 @@ head(ames_sub)
 
 ### exploratory summaries
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 summary_stats <- ames_sub %>%
   summarise(
     n = n(),
@@ -68,7 +68,7 @@ kbl(summary_stats, caption = "summary of sale price") %>%
 
 ### fit preliminary model
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 model1 <- lm(
   sale_price ~ gr_liv_area * neighborhood +
     overall_qual + year_built + total_bsmt_sf +
@@ -79,7 +79,7 @@ model1 <- lm(
 
 ### model summary
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 summary_table <- tidy(model1, conf.int = TRUE)
 kbl(summary_table, digits = 3, caption = "preliminary linear model coefficients") %>%
   kable_styling(full_width = FALSE)
@@ -90,7 +90,7 @@ glance(model1) %>%
 
 ### residual diagnostics
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 resid_df <- augment(model1)
 
 # residuals vs fitted
@@ -112,6 +112,6 @@ ggplot(resid_df, aes(.resid)) +
 
 ### save cleaned data
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 # write.csv(ames_sub, "ames_cleaned.csv", row.names = FALSE)
 ```
