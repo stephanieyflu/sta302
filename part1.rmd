@@ -7,6 +7,7 @@
 # install.packages("kableExtra")
 # install.packages("GGally")
 # install.packages("broom")
+# install.packages("gridExtra")
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -17,6 +18,8 @@ library(kableExtra)
 library(knitr)
 library(GGally)
 library(broom)
+library(ggplot2)
+library(gridExtra)
 ```
 
 ### load the data
@@ -82,7 +85,7 @@ model1 <- lm(
 ```{r message=FALSE, warning=FALSE}
 summary_table <- tidy(model1, conf.int = TRUE)
 kbl(summary_table, digits = 3, caption = "preliminary linear model coefficients") %>%
-  kable_styling(full_width = FALSE)
+  kable_styling(full_width = TRUE)
 
 glance(model1) %>%
   select(r.squared, adj.r.squared, sigma, p.value)
@@ -108,6 +111,90 @@ ggplot(resid_df, aes(sample = .std.resid)) +
 ggplot(resid_df, aes(.resid)) +
   geom_histogram(bins = 30, fill = "skyblue", color = "white") +
   labs(title = "distribution of residuals", x = "residuals", y = "count")
+```
+
+```{r message=FALSE, warning=FALSE}
+# compute fitted values and residuals
+ames_sub$resid <- residuals(model1)
+ames_sub$fitted <- fitted(model1)
+
+# define a smaller-text theme for all plots
+small_theme <- theme_minimal(base_size = 8) +
+  theme(
+    plot.title = element_text(size = 9, face = "bold"),
+    axis.title = element_text(size = 8),
+    axis.text = element_text(size = 7),
+    strip.text = element_text(size = 8),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+# 1. residuals vs fitted
+p1 <- ggplot(ames_sub, aes(x = fitted, y = resid)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", se = FALSE, color = "red") +
+  labs(title = "Residuals vs Fitted", x = "Fitted Values", y = "Residuals") +
+  small_theme
+
+# 2. normal QQ plot
+p2 <- ggplot(ames_sub, aes(sample = resid)) +
+  stat_qq(alpha = 0.5) + stat_qq_line(color = "red") +
+  labs(title = "Normal Q–Q Plot") +
+  small_theme
+
+# 3. histogram of residuals
+p3 <- ggplot(ames_sub, aes(x = resid)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "white", alpha = 0.7) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Histogram of Residuals", x = "Residuals", y = "Count") +
+  small_theme
+
+# 4. residuals vs living area
+p4 <- ggplot(ames_sub, aes(x = gr_liv_area, y = resid)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", se = FALSE, color = "red") +
+  labs(title = "Residuals vs Living Area", x = "Gr_Liv_Area", y = "Residuals") +
+  small_theme
+
+# 5. residuals vs overall quality
+p5 <- ggplot(ames_sub, aes(x = factor(overall_qual), y = resid)) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  labs(title = "Residuals vs Overall Quality", x = "Overall_Qual", y = "Residuals") +
+  small_theme
+
+# 6. residuals vs year built
+p6 <- ggplot(ames_sub, aes(x = year_built, y = resid)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", se = FALSE, color = "red") +
+  labs(title = "Residuals vs Year Built", x = "Year_Built", y = "Residuals") +
+  small_theme
+
+# 7. residuals vs neighborhood
+p7 <- ggplot(ames_sub, aes(x = neighborhood, y = resid)) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  labs(title = "Residuals vs Neighborhood", x = "Neighborhood", y = "Residuals") +
+  theme_minimal(base_size = 8) +
+  theme(
+    plot.title = element_text(size = 9, face = "bold"),
+    axis.title = element_text(size = 8),
+    axis.text.y = element_text(size = 7),
+    axis.text.x = element_text(size = 4, angle = 60, hjust = 1)  # smaller x-axis text
+  )
+
+# 8. residuals vs lot area
+p8 <- ggplot(ames_sub, aes(x = lot_area, y = resid)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", se = FALSE, color = "red") +
+  labs(title = "Residuals vs Lot Area", x = "Lot_Area", y = "Residuals") +
+  small_theme
+
+# 9. residuals vs garage cars
+p9 <- ggplot(ames_sub, aes(x = factor(garage_cars), y = resid)) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  labs(title = "Residuals vs Garage Capacity", x = "Garage_Cars", y = "Residuals") +
+  small_theme
+
+# combine all 9 plots into a 3x3 grid
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, ncol = 3)
 ```
 
 ### save cleaned data
